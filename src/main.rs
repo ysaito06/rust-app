@@ -1,12 +1,10 @@
-use std::collections::HashMap;
 use serde_json::{Value as JsonValue, Map, json};
 
 fn main() {
     let input = "
-        #endpoint = localhost:3000
-        debug = true
-        log.file.nest = /var/log/console.log
-        log.level = info
+endpoint = localhost:3000
+debug = true
+log.file = /var/log/console.log
     ";
 
     let mut root = Map::new();
