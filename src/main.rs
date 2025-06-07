@@ -6,13 +6,13 @@ use serde_json::{Value as JsonValue, Map, json, to_string_pretty};
 use std::collections::HashMap;
 
 fn main() {
-    let schema = "
+    let schema: &'static str = "
 endpoint -> string
 debug -> bool
 log.file -> string
 ";
 
-    let input = "
+    let input: &'static str = "
 endpoint = localhost:3000
 debug = true
 log.file = /var/log/console.log
@@ -65,10 +65,10 @@ log.file = /var/log/console.log
 
 /// スキーマ文字列を key → type の HashMap に変換
 fn parse_schema(schema: &str) -> HashMap<String, String> {
-    let mut map = HashMap::new();
+    let mut map: HashMap<String, String> = HashMap::new();
 
     for line in schema.lines() {
-        let line = line.trim();
+        let line: &str = line.trim();
         if line.is_empty() {
             continue;
         }
