@@ -3,15 +3,24 @@
 // 型も自分が理解しやすいように明示的に書いています。
 
 use serde_json::{Value as JsonValue, Map, json, to_string_pretty};
+use std::collections::HashMap;
 
 fn main() {
+    let schema: &'static str = "
+endpoint -> string
+debug -> bool
+log.file -> string
+";
+
     let input: &'static str = "
 endpoint = localhost:3000
 debug = true
 log.file = /var/log/console.log
 ";
 
+    let schema_map: HashMap<String, String> = parse_schema(schema);
     let mut root: Map<String, JsonValue> = Map::new();
+
 
     for line in input.lines() {
         let line: &str = line.trim();
@@ -22,7 +31,21 @@ log.file = /var/log/console.log
 
         if let Some((key, val)) = line.split_once('=') {
             let key: &str = key.trim();
-            let value: JsonValue = JsonValue::String(val.trim().to_string());
+            let value_str: &str = val.trim();
+
+            let opt: Option<&String> = schema_map.get(key);
+            let expected_type: &String = opt.unwrap_or_else(|| panic!("Unknown key in input: {}", key));
+
+            // matchの比較は&strでないとダメなので変換する
+            let value: JsonValue = match expected_type.as_str() {
+                "string" => JsonValue::String(value_str.to_string()),
+                "bool" => match value_str {
+                    "true" => JsonValue::Bool(true),
+                    "false" => JsonValue::Bool(false),
+                    _ => panic!("Invalid boolean for key '{}': {}", key, value_str),
+                },
+                _ => panic!("Unsupported type: {}", expected_type),
+            };
 
             let keys: Vec<&str> = key.split('.').collect();
             // rootは可変参照で、keysは不変参照
@@ -38,6 +61,24 @@ log.file = /var/log/console.log
     // 1行で書くなら
     // println!("{}", to_string_pretty(&json_output).unwrap());
     println!("{}", json_string);
+}
+
+/// スキーマ文字列を key → type の HashMap に変換
+fn parse_schema(schema: &str) -> HashMap<String, String> {
+    let mut map: HashMap<String, String> = HashMap::new();
+
+    for line in schema.lines() {
+        let line: &str = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        if let Some((key, typ)) = line.split_once("->") {
+            map.insert(key.trim().to_string(), typ.trim().to_string());
+        }
+    }
+
+    map
 }
 
 // mapは可変参照, keysは不変参照で受け取る
